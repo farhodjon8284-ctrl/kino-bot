@@ -120,7 +120,7 @@ async def premium(_, m):
         await m.reply("❌ /premium USER_ID KUN")
 
 # ========== SEARCH ==========
-@app.on_message(filters.text & ~filters.command)
+@app.on_message(filters.text & ~filters.command([]))
 async def search(_, m):
     uid = m.from_user.id
 
