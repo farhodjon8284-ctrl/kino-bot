@@ -7,16 +7,16 @@ from pyrogram.enums import ChatMemberStatus
 # ========== CONFIG ==========
 API_ID = 743554
 API_HASH = "b440caaf2c2763fdc72bbb8350dfd6b8"
-BOT_TOKEN = "6803200402:AAFtNX2L6T0KfFbjLqq7I9Nr1ghbvqtBTA8"
+BOT_TOKEN = "6610724048:AAG0169Sgenx8HTLWtW13cO-SZnTMwGkBL0"
 
 ADMINS = [1940757150]
 CHANNEL_ID = "@Seriallar_kanaliuz"
 
 app = Client(
-    "Asilmediatv_bot",
+    "Uzmovi_tarjima_bot",
     api_id=743554,
     api_hash="b440caaf2c2763fdc72bbb8350dfd6b8",
-    bot_token="6803200402:AAFtNX2L6T0KfFbjLqq7I9Nr1ghbvqtBTA8"
+    bot_token="6610724048:AAG0169Sgenx8HTLWtW13cO-SZnTMwGkBL0"
 )
 
 # ========== DATABASE ==========
