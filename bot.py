@@ -36,7 +36,7 @@ db.commit()
 # ========= OBUNA TEKSHIRISH =========
 async def subscribed(user_id: int) -> bool:
     try:
-        m = await app.get_chat_member(CHANNEL_ID, user_id)
+        m = await app.get_chat_member(CHANNEL_ID, -1002007689198)
         return m.status in ("member", "administrator", "owner")
     except:
         return False
