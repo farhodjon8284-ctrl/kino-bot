@@ -4,8 +4,8 @@ from pyrogram import Client, filters
 from pyrogram.types import Message
 
 # ========= CONFIG =========
-API_ID = 743554
-API_HASH = "b440caaf2c2763fdc72bbb8350dfd6b8Y"
+API_ID = id:743554
+API_HASH = "b440caaf2c2763fdc72bbb8350dfd6b8"
 BOT_TOKEN = "6610724048:AAG2MxcmUeLZOhRvvXqhwv42p6eui4pShgw"
 
 CHANNEL_ID = -1002007689198   # majburiy obuna
@@ -15,7 +15,7 @@ ADMINS = [1940757150]
 app = Client(
     "Uzmovi_tarjima_bot",
     api_id=743554,
-    api_hash="b440caaf2c2763fdc72bbb8350dfd6b8Y",
+    api_hash="b440caaf2c2763fdc72bbb8350dfd6b8",
     bot_token="6610724048:AAG2MxcmUeLZOhRvvXqhwv42p6eui4pShgw"
 )
 
