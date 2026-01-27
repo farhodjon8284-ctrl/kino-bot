@@ -46,7 +46,7 @@ async def subscribed(user_id: int) -> bool:
 @app.on_message(filters.command("start") & filters.private)
 async def start(_, m: Message):
     if not await subscribed(m.from_user.id):
-        await m.reply(f"❌ Avval kanalga obuna bo‘ling:\n{CHANNEL_ID}")
+        await m.reply(f"❌ Avval kanalga obuna bo‘ling:\n{-1002007689198}")
         return
     await m.reply("🎬 Kino bot ishga tushdi!\nKino kodini yuboring.")
 # =========================
@@ -81,7 +81,7 @@ async def add_movie(_, m: Message):
 @app.on_message(filters.text & filters.private)
 async def search(_, m: Message):
     if not await subscribed(m.from_user.id):
-        await m.reply(f"❌ Avval kanalga obuna bo‘ling:\n{CHANNEL_ID}")
+        await m.reply(f"❌ Avval kanalga obuna bo‘ling:\n{-1002007689198}")
         return
 
     q = m.text.lower().strip()
