@@ -1,137 +1,93 @@
 import asyncio
 import sqlite3
-import time
 from pyrogram import Client, filters
-from pyrogram.enums import ChatMemberStatus
+from pyrogram.types import Message
 
-# ========== CONFIG ==========
+# ========= CONFIG =========
 API_ID = 743554
-API_HASH = "b440caaf2c2763fdc72bbb8350dfd6b8"
+API_HASH = "b440caaf2c2763fdc72bbb8350dfd6b8Y"
 BOT_TOKEN = "6610724048:AAG2MxcmUeLZOhRvvXqhwv42p6eui4pShgw"
 
+CHANNEL_ID = -1002007689198   # majburiy obuna
 ADMINS = [1940757150]
-CHANNEL_ID = "@Seriallar_kanaliuz"
+# ==========================
 
 app = Client(
     "Uzmovi_tarjima_bot",
     api_id=743554,
-    api_hash="b440caaf2c2763fdc72bbb8350dfd6b8",
+    api_hash="b440caaf2c2763fdc72bbb8350dfd6b8Y",
     bot_token="6610724048:AAG2MxcmUeLZOhRvvXqhwv42p6eui4pShgw"
 )
 
-# ========== DATABASE ==========
-db = sqlite3.connect("kino.db", check_same_thread=False)
+# ========= DATABASE =========
+db = sqlite3.connect("movies.db", check_same_thread=False)
 sql = db.cursor()
 
-sql.execute("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY)")
 sql.execute("""
-CREATE TABLE IF NOT EXISTS movies (
+CREATE TABLE IF NOT EXISTS movies(
     code TEXT PRIMARY KEY,
     title TEXT,
     file_id TEXT
 )
 """)
-sql.execute("""
-CREATE TABLE IF NOT EXISTS premium (
-    user_id INTEGER PRIMARY KEY,
-    until INTEGER
-)
-""")
 db.commit()
+# ============================
 
-# ========== HELPERS ==========
-def is_premium(uid):
-    row = sql.execute(
-        "SELECT until FROM premium WHERE user_id=?",
-        (uid,)
-    ).fetchone()
-    return row and row[0] > int(time.time())
-
-async def subscribed(uid):
+# ========= OBUNA TEKSHIRISH =========
+async def subscribed(user_id: int) -> bool:
     try:
-        member = await app.get_chat_member(CHANNEL_ID, uid)
-        return member.status in (
-            ChatMemberStatus.MEMBER,
-            ChatMemberStatus.ADMINISTRATOR,
-            ChatMemberStatus.OWNER
-        )
+        m = await app.get_chat_member(CHANNEL_ID, user_id)
+        return m.status in ("member", "administrator", "owner")
     except:
         return False
+# ===================================
 
-# ========== START ==========
-@app.on_message(filters.command("start"))
-async def start(_, m):
-    uid = m.from_user.id
-    sql.execute("INSERT OR IGNORE INTO users VALUES (?)", (uid,))
-    db.commit()
-    await m.reply("🎬 Kino botga xush kelibsiz!\nKino nomi yoki kodini yuboring.")
+# ========= START =========
+@app.on_message(filters.command("start") & filters.private)
+async def start(_, m: Message):
+    if not await subscribed(m.from_user.id):
+        await m.reply(f"❌ Avval kanalga obuna bo‘ling:\n{CHANNEL_ID}")
+        return
+    await m.reply("🎬 Kino bot ishga tushdi!\nKino kodini yuboring.")
+# =========================
 
-# ========== ADD MOVIE ==========
-@app.on_message(filters.command("addmovie") & filters.user(ADMINS))
-async def add_movie(_, m):
+# ========= ADMIN: ADD =========
+@app.on_message(filters.command("add") & filters.private)
+async def add_movie(_, m: Message):
+    if m.from_user.id not in ADMINS:
+        return
+
+    if not m.reply_to_message or not m.reply_to_message.video:
+        await m.reply("❌ Videoga reply qilib yuboring:\n/add KOD NOMI")
+        return
+
     try:
         _, code, title = m.text.split(" ", 2)
-        if not m.reply_to_message or not m.reply_to_message.video:
-            await m.reply("❌ Videoga reply qilib yozing")
-            return
-
-        file_id = m.reply_to_message.video.file_id
-        sql.execute(
-            "INSERT OR REPLACE INTO movies VALUES (?,?,?)",
-            (code, title, file_id)
-        )
-        db.commit()
-        await m.reply(f"✅ Kino saqlandi\n🎟 Kod: `{code}`")
     except:
-        await m.reply("❌ Format: /addmovie KOD NOMI (videoga reply)")
-
-# ========== DELETE ==========
-@app.on_message(filters.command("delmovie") & filters.user(ADMINS))
-async def del_movie(_, m):
-    if len(m.command) < 2:
-        await m.reply("❌ Kino kodi yozing")
+        await m.reply("❌ Format: /add KOD NOMI")
         return
-    sql.execute("DELETE FROM movies WHERE code=?", (m.command[1],))
+
+    file_id = m.reply_to_message.video.file_id
+    sql.execute(
+        "INSERT OR REPLACE INTO movies VALUES (?,?,?)",
+        (code.lower(), title, file_id)
+    )
     db.commit()
-    await m.reply("🗑 O‘chirildi")
 
-# ========== STATS ==========
-@app.on_message(filters.command("stats") & filters.user(ADMINS))
-async def stats(_, m):
-    u = sql.execute("SELECT COUNT(*) FROM users").fetchone()[0]
-    k = sql.execute("SELECT COUNT(*) FROM movies").fetchone()[0]
-    p = sql.execute("SELECT COUNT(*) FROM premium").fetchone()[0]
-    await m.reply(f"📊 Statistika\n👤 {u}\n🎬 {k}\n💎 {p}")
+    await m.reply(f"✅ Qo‘shildi:\n🎬 {title}\n🔑 Kod: {code}")
+# ================================
 
-# ========== PREMIUM ==========
-@app.on_message(filters.command("premium") & filters.user(ADMINS))
-async def premium(_, m):
-    try:
-        uid = int(m.command[1])
-        days = int(m.command[2])
-        until = int(time.time()) + days * 86400
-        sql.execute(
-            "INSERT OR REPLACE INTO premium VALUES (?,?)",
-            (uid, until)
-        )
-        db.commit()
-        await m.reply("💎 Premium berildi")
-    except:
-        await m.reply("❌ /premium USER_ID KUN")
+# ========= SEARCH =========
+@app.on_message(filters.text & filters.private)
+async def search(_, m: Message):
+    if not await subscribed(m.from_user.id):
+        await m.reply(f"❌ Avval kanalga obuna bo‘ling:\n{CHANNEL_ID}")
+        return
 
-# ========== SEARCH ==========
-@app.on_message(filters.text & ~filters.command([]))
-async def search(_, m):
-    uid = m.from_user.id
+    q = m.text.lower().strip()
 
-    if not is_premium(uid):
-        if not await subscribed(uid):
-            await m.reply(f"❌ Avval kanalga obuna bo‘ling:\n{CHANNEL_ID}")
-            return
-
-    q = m.text.lower()
     row = sql.execute(
-        "SELECT file_id, title FROM movies WHERE code=? OR title LIKE ?",
+        "SELECT title, file_id FROM movies WHERE code=? OR title LIKE ?",
         (q, f"%{q}%")
     ).fetchone()
 
@@ -140,13 +96,14 @@ async def search(_, m):
         return
 
     await app.send_video(
-        m.chat.id,
-        row[0],
-        caption=f"🎬 {row[1]}",
+        chat_id=m.chat.id,
+        video=row[1],
+        caption=f"🎬 {row[0]}",
         protect_content=True
     )
+# ===========================
 
-# ========== RUN ==========
+# ========= RUN =========
 async def main():
     await app.start()
     print("Bot ishga tushdi")
