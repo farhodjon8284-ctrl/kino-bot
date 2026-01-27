@@ -6,14 +6,14 @@ from pyrogram.types import Message
 # ========= CONFIG =========
 API_ID = 743554
 API_HASH = "b440caaf2c2763fdc72bbb8350dfd6b8"
-BOT_TOKEN = "6610724048:AAG2MxcmUeLZOhRvvXqhwv42p6eui4pShgw"
+BOT_TOKEN = "8321768755:AAGVGzUi3T3nvrbFsR0RztA8bDOagqmyzO0"
 
 CHANNEL_ID = -1002007689198   # majburiy obuna
 ADMINS = [1940757150]
 # ==========================
 
 app = Client(
-    "Uzmovi_tarjima_bot",
+    "Kinofilimuzbot",
     api_id = 743554,
     api_hash = "b440caaf2c2763fdc72bbb8350dfd6b8",
     bot_token = "6610724048:AAG2MxcmUeLZOhRvvXqhwv42p6eui4pShgw"
