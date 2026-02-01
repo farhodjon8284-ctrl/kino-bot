@@ -4,12 +4,12 @@ import asyncio
 from pyrogram import Client, filters
 
 # ================= CONFIG =================
-API_ID = 743554  # Telegram API ID
+API_ID = 743554
 API_HASH = "b440caaf2c2763fdc72bbb8350dfd6b8"
 BOT_TOKEN = "6803200402:AAFtNX2L6T0KfFbjLqq7I9Nr1ghbvqtBTA8"
 
-ADMINS = [1940757150]  # Adminlar ID si
-CHANNEL_ID = "@Seriallar_kanaliuz"  # Majburiy obuna kanali
+ADMINS = [1940757150]
+CHANNEL_ID = "@Seriallar_kanaliuz"
 
 # ================= INIT BOT =================
 app = Client(
@@ -20,34 +20,30 @@ app = Client(
 )
 
 # ================= DATABASE =================
-db = sqlite3.connect("kino.db")
+db = sqlite3.connect("kino.db", check_same_thread=False)
 sql = db.cursor()
 
-# Users table
 sql.execute("""CREATE TABLE IF NOT EXISTS users(
     user_id INTEGER PRIMARY KEY
 )""")
 
-# Movies table
 sql.execute("""CREATE TABLE IF NOT EXISTS movies(
     code TEXT PRIMARY KEY,
     title TEXT,
     file_id TEXT
 )""")
 
-# Premium table
 sql.execute("""CREATE TABLE IF NOT EXISTS premium(
     user_id INTEGER PRIMARY KEY,
     until INTEGER
 )""")
+
 db.commit()
 
 # ================= HELPERS =================
 def is_premium(user_id):
     row = sql.execute("SELECT until FROM premium WHERE user_id=?", (user_id,)).fetchone()
-    if row and row[0] > int(time.time()):
-        return True
-    return False
+    return row and row[0] > int(time.time())
 
 def subscribed(user_id):
     try:
@@ -56,9 +52,8 @@ def subscribed(user_id):
     except:
         return False
 
-# Example limit: 3 movies per day for non-premium
 def can_watch(user_id):
-    # You can implement a more complex daily limit system here
+    # Non-premium foydalanuvchilar uchun limit
     return True
 
 # ================= HANDLERS =================
@@ -66,17 +61,19 @@ def can_watch(user_id):
 async def start_cmd(_, m):
     await m.reply("🎬 Kino bot ishga tushdi!\nObuna bo‘ling va kinolarni tomosha qiling ✅")
 
+# ====== ADD MOVIE ======
 @app.on_message(filters.command("addmovie") & filters.user(ADMINS))
 async def add_movie(_, m):
     parts = m.text.split(maxsplit=3)
-    if len(parts) < 4:
-        await m.reply("❌ Format: /addmovie CODE 'TITLE' FILE_ID")
+    if len(parts) < 4 or not m.reply_to_message or not m.reply_to_message.video:
+        await m.reply("❌ Format: /addmovie CODE 'TITLE' (video-ga reply qiling)")
         return
-    code, title, file_id = parts[1], parts[2], parts[3]
+    code, title, file_id = parts[1], parts[2], m.reply_to_message.video.file_id
     sql.execute("INSERT OR REPLACE INTO movies VALUES (?,?,?)", (code, title, file_id))
     db.commit()
     await m.reply(f"✅ Kino saqlandi\n🎟 Kod: `{code}`")
 
+# ====== DELETE MOVIE ======
 @app.on_message(filters.command("delmovie") & filters.user(ADMINS))
 async def del_movie(_, m):
     parts = m.text.split()
@@ -88,6 +85,7 @@ async def del_movie(_, m):
     db.commit()
     await m.reply("🗑 Kino o‘chirildi")
 
+# ====== STATS ======
 @app.on_message(filters.command("stats") & filters.user(ADMINS))
 async def stats(_, m):
     u = sql.execute("SELECT COUNT(*) FROM users").fetchone()[0]
@@ -95,6 +93,7 @@ async def stats(_, m):
     p = sql.execute("SELECT COUNT(*) FROM premium").fetchone()[0]
     await m.reply(f"📊 Statistika\n👤 Foydalanuvchilar: {u}\n🎬 Kinolar: {k}\n💎 Premium: {p}")
 
+# ====== BROADCAST ======
 @app.on_message(filters.command("send") & filters.user(ADMINS))
 async def broadcast(_, m):
     parts = m.text.split(" ", 1)
@@ -109,6 +108,7 @@ async def broadcast(_, m):
             pass
     await m.reply("📨 Xabar yuborildi")
 
+# ====== PREMIUM ======
 @app.on_message(filters.command("premium") & filters.user(ADMINS))
 async def premium(_, m):
     parts = m.text.split()
@@ -125,6 +125,7 @@ async def premium(_, m):
     db.commit()
     await m.reply("💎 Premium berildi")
 
+# ====== SEARCH ======
 @app.on_message(filters.text & ~filters.command)
 async def search(_, m):
     uid = m.from_user.id
@@ -158,8 +159,8 @@ async def search(_, m):
 # ================= RUN =================
 async def main():
     await app.start()
-    print("Bot ishga tushdi")
-    await asyncio.Event().wait()  # bot 24/7 ishlashi uchun
+    print("Bot ishga tushdi ✅")
+    await asyncio.Event().wait()
 
 if __name__ == "__main__":
     asyncio.run(main())
